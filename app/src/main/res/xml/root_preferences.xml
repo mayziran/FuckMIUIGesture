@@ -7,6 +7,10 @@
                           app:defaultValue="true"
                           app:title="@string/strong_mode"
                           app:summary="@string/strong_mode_desc"/>
+        <SwitchPreference app:key="hide_line_on_home_switch"
+                          app:defaultValue="false"
+                          app:title="@string/hide_line_on_home_switch"
+                          app:summary="@string/hide_line_on_home_switch_desc"/>
     </PreferenceCategory>
 
     <PreferenceCategory

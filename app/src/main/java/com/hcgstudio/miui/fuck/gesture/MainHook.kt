@@ -1,11 +1,24 @@
 package com.hcgstudio.miui.fuck.gesture
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.xposed.proxy.YukiHookXposedInitProxy
 
+
+private const val HIDE_GESTURE_LINE = "hide_gesture_line"
+
+private val MIUI_HOME_PACKAGES = setOf(
+    "com.miui.home",
+    "com.android.provision",
+    "com.mi.android.globallauncher",
+    "com.aura.oobe.kddi",
+    "com.google.android.setupwizard"
+)
 
 @InjectYukiHookWithXposed(modulePackageName = "com.hcgstudio.miui.fuck.gesture")
 class MainHook : YukiHookXposedInitProxy {
@@ -13,12 +26,18 @@ class MainHook : YukiHookXposedInitProxy {
         YukiHookAPI.encase {
 
             loadApp(name = "com.android.systemui") {
+                val hideLineOnHomeSwitch = prefs.get(DataConst.HIDE_LINE_ON_HOME_SWITCH_DATA)
+
                 findClass("com.android.systemui.assist.PhoneStateMonitorController").hook {
                     injectMember {
                         method {
                             name = "onDefaultHomeChanged"
                         }
-                        replaceTo({})
+                        replaceUnit {
+                            if (hideLineOnHomeSwitch) {
+                                applyHideGestureLine(contextOf(instance), args(0).any() as? ComponentName)
+                            }
+                        }
                     }
                 }
 
@@ -90,4 +109,28 @@ class MainHook : YukiHookXposedInitProxy {
         }
     }
 
+}
+
+private fun contextOf(instance: Any?): Context? = try {
+    instance?.javaClass
+        ?.getDeclaredField("mContext")
+        ?.apply { isAccessible = true }
+        ?.get(instance) as? Context
+} catch (_: Throwable) {
+    null
+}
+
+private fun applyHideGestureLine(context: Context?, home: ComponentName?) {
+    val packageName = home?.packageName
+    val contentResolver = context?.contentResolver
+    if (packageName == null || contentResolver == null) {
+        return
+    }
+    val hide = if (packageName in MIUI_HOME_PACKAGES) 0 else 1
+    Thread {
+        try {
+            Settings.Global.putInt(contentResolver, HIDE_GESTURE_LINE, hide)
+        } catch (_: Throwable) {
+        }
+    }.start()
 }

@@ -5,6 +5,8 @@
     <string name="main_header">Main</string>
     <string name="strong_mode">Strong Mode</string>
     <string name="strong_mode_desc">Use gesture navigation all the time.</string>
+    <string name="hide_line_on_home_switch">Hide Gesture Line On Third-Party Launcher</string>
+    <string name="hide_line_on_home_switch_desc">On default launcher change: hide the gesture hint line for third-party launchers, show it for MIUI home.</string>
     <string name="restart_system_ui">Restart System UI</string>
     <string name="restart_system_ui_desc">Restart System UI and MIUI home now.</string>
     <string name="utils_header">Utils</string>
