@@ -3,6 +3,25 @@ plugins {
     id 'kotlin-android'
 }
 
+// Release signing is optional. Values come from keystore.properties (git ignored,
+// used for local builds) or from -P flags / environment variables (used by CI).
+// Without a keystore the release build stays unsigned.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def releaseStoreFile = findProperty('RELEASE_STORE_FILE')
+        ?: System.getenv('RELEASE_STORE_FILE') ?: keystoreProps['storeFile']
+def releaseStorePassword = findProperty('RELEASE_STORE_PASSWORD')
+        ?: System.getenv('RELEASE_STORE_PASSWORD') ?: keystoreProps['storePassword']
+def releaseKeyAlias = findProperty('RELEASE_KEY_ALIAS')
+        ?: System.getenv('RELEASE_KEY_ALIAS') ?: keystoreProps['keyAlias']
+def releaseKeyPassword = findProperty('RELEASE_KEY_PASSWORD')
+        ?: System.getenv('RELEASE_KEY_PASSWORD') ?: keystoreProps['keyPassword']
+// Resolve relative paths against the repository root, not the app module.
+def hasReleaseSigning = releaseStoreFile?.trim() && rootProject.file(releaseStoreFile).isFile()
+
 android {
     namespace 'com.hcgstudio.miui.fuck.gesture'
     // The libxposed service artifact requires compileSdk 36.
@@ -16,11 +35,25 @@ android {
         versionName "1.2.0"
     }
 
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile rootProject.file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {

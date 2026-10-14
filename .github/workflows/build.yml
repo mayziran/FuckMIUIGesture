@@ -1,0 +1,59 @@
+name: Build
+
+# Manual only: nothing runs on push or pull requests.
+# Start it from GitHub -> Actions -> Build -> Run workflow.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      # The runner image already ships the Android SDK; setup-android@v3 is
+      # broken (it runs `sdkmanager tools`, a package that no longer exists).
+      - name: Install Android SDK packages
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager | head -1)"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --install "platforms;android-36" "build-tools;34.0.0" "platform-tools" > /dev/null
+          echo "platforms: $(ls "$SDK/platforms")"
+
+      # secrets cannot be used in a step level `if:`, so check it in the shell.
+      - name: Decode release keystore
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          if [ -n "$SIGNING_KEY" ]; then
+            printf '%s' "$SIGNING_KEY" | tr -d '[:space:]' | base64 -d > release.keystore
+            echo "keystore size: $(wc -c < release.keystore) bytes"
+          else
+            echo "::warning::SIGNING_KEY is not set - the APK will be unsigned"
+          fi
+
+      - name: Build release
+        env:
+          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

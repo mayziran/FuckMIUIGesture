@@ -1,0 +1,102 @@
+name: Release
+
+# Runs when you push a version tag (release tags look like 3-1.2.0), or manually
+# from GitHub -> Actions -> Release -> Run workflow.
+# Nothing runs on branch pushes or pull requests.
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Where the release is published. Defaults to this repository. To publish to
+  # the Xposed Modules Repo (the standard channel for Xposed modules), point it
+  # at your module entry there, e.g.:
+  #   RELEASE_REPOSITORY: Xposed-Modules-Repo/com.hcgstudio.miui.fuck.gesture
+  # and provide a TOKEN secret with write access to that repository.
+  RELEASE_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # A tag created by the release step itself must not start another run.
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Read version from app/build.gradle
+        id: version
+        run: |
+          code=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' app/build.gradle | head -1)
+          name=$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' app/build.gradle | head -1)
+          if [ -z "$code" ] || [ -z "$name" ]; then
+            echo "::error::Could not read versionCode/versionName from app/build.gradle"
+            exit 1
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "Will publish version $name (versionCode $code)"
+
+      # The runner image already ships the Android SDK; setup-android@v3 is
+      # broken (it runs `sdkmanager tools`, a package that no longer exists).
+      - name: Install Android SDK packages
+        run: |
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager | head -1)"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --install "platforms;android-36" "build-tools;34.0.0" "platform-tools" > /dev/null
+          echo "platforms: $(ls "$SDK/platforms")"
+
+      - name: Decode release keystore
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "::error::The SIGNING_KEY secret is not set (Settings -> Secrets and variables -> Actions)"
+            exit 1
+          fi
+          printf '%s' "$SIGNING_KEY" | tr -d '[:space:]' | base64 -d > release.keystore
+          echo "keystore size: $(wc -c < release.keystore) bytes"
+          if ! keytool -list -keystore release.keystore -storepass "$KEY_STORE_PASSWORD" > /dev/null 2>&1; then
+            echo "::error::The keystore could not be opened - check SIGNING_KEY (base64) and KEY_STORE_PASSWORD"
+            exit 1
+          fi
+          echo "keystore OK"
+
+      - name: Build signed release
+        env:
+          RELEASE_STORE_FILE: release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ALIAS_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk \
+             "FuckMiuiGesture-${{ steps.version.outputs.name }}.apk"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.RELEASE_REPOSITORY }}
+          token: ${{ secrets.TOKEN || github.token }}
+          # Xposed Modules Repo convention: <versionCode>-<versionName>
+          tag_name: ${{ steps.version.outputs.code }}-${{ steps.version.outputs.name }}
+          name: ${{ steps.version.outputs.name }}
+          files: FuckMiuiGesture-*.apk
