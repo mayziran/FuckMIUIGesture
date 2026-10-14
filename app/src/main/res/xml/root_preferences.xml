@@ -4,6 +4,7 @@
     <PreferenceCategory
             app:title="@string/main_header">
         <SwitchPreference app:key="strong_mode"
+                          app:defaultValue="true"
                           app:title="@string/strong_mode"
                           app:summary="@string/strong_mode_desc"/>
     </PreferenceCategory>

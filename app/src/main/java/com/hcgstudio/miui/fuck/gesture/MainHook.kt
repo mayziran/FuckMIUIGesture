@@ -13,10 +13,10 @@ class MainHook : YukiHookXposedInitProxy {
         YukiHookAPI.encase {
 
             loadApp(name = "com.android.systemui") {
-                findClass("com.android.systemui.recents.MiuiFullScreenGestureProxy").hook {
+                findClass("com.android.systemui.assist.PhoneStateMonitorController").hook {
                     injectMember {
                         method {
-                            name = "updateDefaultHome"
+                            name = "onDefaultHomeChanged"
                         }
                         replaceTo({})
                     }
@@ -62,7 +62,7 @@ class MainHook : YukiHookXposedInitProxy {
                     }
                 }
 
-                findClass("com.miui.home.launcher.common.Utilities").hook {
+                findClass("com.miui.home.common.utils.BuildConfigUtils").hook {
                     injectMember {
                         method {
                             name = "isUseMiuiHomeAsDefaultHome"
