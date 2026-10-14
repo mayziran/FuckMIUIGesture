@@ -1,9 +1,17 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
+        // Xposed API stubs (compileOnly). Historically on jcenter, which is dead.
+        maven { url "https://api.xposed.info/" }
     }
 }
 rootProject.name = "FuckMiuiGesture"

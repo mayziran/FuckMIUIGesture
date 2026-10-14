@@ -1,21 +1,13 @@
 # Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# The Xposed API is compileOnly and provided at runtime by the hooking
+# framework, so R8 must not fail on the missing classes.
+-dontwarn de.robv.android.xposed.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Entry classes are referenced by their fully qualified name from
+# assets/xposed_init and assets/yukihookapi_init, so their names must be
+# preserved. YukiHookAPI itself needs no keep rules under R8.
+-keep class com.hcgstudio.miui.fuck.gesture.MainHook { *; }
+-keep class com.hcgstudio.miui.fuck.gesture.MainHook_YukiHookXposedInit { *; }
