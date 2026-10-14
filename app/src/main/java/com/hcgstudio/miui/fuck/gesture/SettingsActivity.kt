@@ -1,15 +1,10 @@
 package com.hcgstudio.miui.fuck.gesture
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
-import androidx.preference.SwitchPreference
-import com.highcapable.yukihookapi.hook.factory.modulePrefs
-import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -23,10 +18,6 @@ class SettingsActivity : AppCompatActivity() {
                 .commit()
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        try {
-            this.getSharedPreferences("${this.packageName}_preferences", Context.MODE_WORLD_READABLE)
-        } catch (_: SecurityException) {
-        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

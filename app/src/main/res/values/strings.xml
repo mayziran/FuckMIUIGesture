@@ -12,4 +12,5 @@
     <string name="utils_header">Utils</string>
     <string name="open_setting">System Navigation Settings</string>
     <string name="open_setting_desc">Open System Navigation Setting Page</string>
+    <string name="xposed_description">Allow to use gesture for third-party launcher in MIUI.</string>
 </resources>

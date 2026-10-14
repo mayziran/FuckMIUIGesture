@@ -1,8 +1,12 @@
 package com.hcgstudio.miui.fuck.gesture
 
-import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
-
 object DataConst {
-    val STRONG_MODE_DATA = PrefsData("strong_mode", true)
-    val HIDE_LINE_ON_HOME_SWITCH_DATA = PrefsData("hide_line_on_home_switch", false)
+    /** SharedPreferences file of the module app, also used as the remote preference name. */
+    const val PREFS_NAME = "com.hcgstudio.miui.fuck.gesture_preferences"
+
+    const val STRONG_MODE = "strong_mode"
+    const val STRONG_MODE_DEFAULT = true
+
+    const val HIDE_LINE_ON_HOME_SWITCH = "hide_line_on_home_switch"
+    const val HIDE_LINE_ON_HOME_SWITCH_DEFAULT = false
 }

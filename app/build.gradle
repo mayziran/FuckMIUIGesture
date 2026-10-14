@@ -1,12 +1,12 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'com.google.devtools.ksp' version '1.9.24-1.0.20'
 }
 
 android {
     namespace 'com.hcgstudio.miui.fuck.gesture'
-    compileSdk 34
+    // The libxposed service artifact requires compileSdk 36.
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.hcgstudio.miui.fuck.gesture"
@@ -33,13 +33,12 @@ android {
 }
 
 dependencies {
-    // Pinned to 1.0.x on purpose: from 1.1.0 on, YukiHookAPI's KSP processor
-    // generates an entry class that also implements IXposedHookZygoteInit,
-    // which LSPosed has removed and warns about.
-    implementation 'com.highcapable.yukihookapi:api:1.0.77'
-    ksp 'com.highcapable.yukihookapi:ksp-xposed:1.0.77'
+    // Modern Xposed API, provided by the framework at runtime.
+    compileOnly 'io.github.libxposed:api:101.0.1'
+    // Module app side: publishes this module's preferences to the framework.
+    implementation 'io.github.libxposed:service:101.0.0'
+
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    compileOnly 'de.robv.android.xposed:api:82'
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'

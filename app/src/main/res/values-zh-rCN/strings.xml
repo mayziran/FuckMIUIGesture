@@ -13,4 +13,5 @@
     <string name="utils_header">工具</string>
     <string name="open_setting">系统导航设置</string>
     <string name="open_setting_desc">打开系统导航设置界面</string>
+    <string name="xposed_description">使用第三方启动器时仍可使用手势导航。</string>
 </resources>
